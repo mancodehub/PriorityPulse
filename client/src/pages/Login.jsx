@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { sendOtp, verifyOtp } from '../api/client';
@@ -34,8 +34,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      // TEMPORARY DEVELOPMENT-ONLY AUTH BYPASS
-      if (!import.meta.env.DEV) await sendOtp(email);
+      await sendOtp(email);
       setStep('otp');
       setCooldown(RESEND_COOLDOWN);
       if (!isResend) setOtp('');
@@ -55,13 +54,9 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      // TEMPORARY DEVELOPMENT-ONLY AUTH BYPASS
-      if (import.meta.env.DEV) {
-        localStorage.setItem('pp_token', 'development-token');
-      } else {
-        const { data } = await verifyOtp(email, otp);
-        localStorage.setItem('pp_token', data.token);
-      }
+      const { data } = await verifyOtp(email, otp);
+      if (!data.token) throw new Error('Missing authentication token.');
+      localStorage.setItem('pp_token', data.token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'That code didn\u2019t work. Try again.');
@@ -214,3 +209,4 @@ function PulseLine({ active }) {
     </div>
   );
 }
+

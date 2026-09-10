@@ -1,0 +1,362 @@
+[
+  {
+    "sender": "Alerts <security@bank.com>",
+    "subject": "URGENT: Suspicious activity detected on your account",
+    "body": "We detected an unauthorized sign-in attempt from a new device. If this was not you, please verify your credentials immediately or your account will be locked.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "DevOps Team <devops@company.com>",
+    "subject": "CRITICAL: Production database outage - P0 Incident",
+    "body": "The main PostgreSQL cluster in us-east-1 is unreachable. Services are down for all users. Immediate incident response required on bridge link.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Sarah Jenkins <sarah.j@acme-client.com>",
+    "subject": "Contract signing deadline TODAY 5PM - Action Required",
+    "body": "We need the signed master service agreement before the board meeting closes at 5PM today, otherwise the contract will be cancelled. Please sign and return ASAP.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Stripe Billing <billing@stripe.com>",
+    "subject": "Payment Failed: Your subscription will be cancelled in 24 hours",
+    "body": "Your recent renewal payment of  could not be processed. Please update your payment method immediately to avoid service interruption and data suspension.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "HR Recruitment <recruiting@google.com>",
+    "subject": "Interview Scheduled for Today at 3:00 PM",
+    "body": "Your final technical round interview is scheduled for today at 3:00 PM EST. Please find the Google Meet link attached and join 5 minutes early.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "CEO Office <mark.ceo@company.com>",
+    "subject": "URGENT: Executive Escalation regarding Q3 budget",
+    "body": "Please send me the updated financial breakdown immediately. The investors are asking for the numbers before our 2 PM call.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "AWS CloudWatch <no-reply-aws@amazon.com>",
+    "subject": "ALARM: High memory utilization > 98% on prod-api-server",
+    "body": "CloudWatch alarm prod-api-memory has entered ALARM state. Threshold breached. Immediate restart or scaling action needed to prevent downtime.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Legal Counsel <legal@company.com>",
+    "subject": "Action Required: Compliance audit submission due today",
+    "body": "The regulatory filing deadline is close of business today. Failure to submit will result in penalties. Please provide your department approval immediately.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Client Success <client.care@bigclient.org>",
+    "subject": "URGENT: Critical bug in checkout flow preventing customer orders",
+    "body": "Customers are unable to complete purchases on the mobile site. This is resulting in revenue loss every minute. Emergency fix needed immediately.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Payroll Dept <payroll@company.com>",
+    "subject": "Time-sensitive: Verify bank account for direct deposit today",
+    "body": "We noticed an inconsistency in your direct deposit information. Please update your banking details by 1 PM today to ensure your salary is disbursed on time.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Operations <ops@supplychain.net>",
+    "subject": "EMERGENCY: Shipment delayed at customs - immediate signoff required",
+    "body": "Customs requires clearance documentation before the cutoff at noon. If not submitted, cargo will be held for two weeks. Please review attached form now.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Tech Support <support@prioritypulse.ai>",
+    "subject": "Urgent: SSL certificate expiring in 6 hours",
+    "body": "The SSL certificate for your main domain is set to expire in 6 hours. Browser warnings will appear if renewal is not completed immediately.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Michael Chang <mchang@partner.io>",
+    "subject": "Immediate response needed: Server migration happening tonight",
+    "body": "We are starting the database migration at 11 PM tonight. Please confirm that your read replicas are synced before 6 PM today.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Security Team <secops@prioritypulse.ai>",
+    "subject": "Security Alert: API key leak detected on public repository",
+    "body": "Our automated scanners detected a leaked production secret key. Please revoke and rotate the secret immediately to prevent unauthorized access.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "VP of Engineering <vpeng@company.com>",
+    "subject": "P0 Incident Post-Mortem and Action Items - Mandatory Attendance",
+    "body": "Emergency all-hands engineering briefing regarding today outage. Attendance is mandatory for all senior engineers at 4 PM sharp.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Ana Rodriguez <ana@apexfinancial.com>",
+    "subject": "Q3 contract renewal — action required today",
+    "body": "Hi Naomi, we are ready to move ahead with renewal but need the signed agreement returned before tomorrow board meeting. Could you confirm today?",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Cloudflare <notifications@cloudflare.com>",
+    "subject": "DDoS Attack detected against your domain - Under Attack mode suggested",
+    "body": "Cloudflare has mitigated a 15 Gbps volumetric attack against your website. Immediate action: review firewall rules and enable Under Attack mode.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Finance Director <cfo@enterprise.com>",
+    "subject": "Wire transfer approval needed immediately for vendor payment",
+    "body": "The wire transfer deadline is 3:30 PM. Please log into the treasury portal and approve the wire to prevent supplier shipment stoppage.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Health Clinic <urgent@healthclinic.org>",
+    "subject": "Urgent lab results: Doctor requested same-day callback",
+    "body": "Your recent diagnostic test results are ready. Please call the clinic desk immediately to speak with the attending physician.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Customer Support Lead <leads@prioritypulse.ai>",
+    "subject": "Tier 1 client threatening to cancel contract if not resolved today",
+    "body": "The account manager from Apex reported an unresolved ticket open for 48 hours. They are threatening cancellation. Need senior engineering help ASAP.",
+    "label": "HIGH"
+  },
+  {
+    "sender": "Alex Rivera <alex.rivera@company.com>",
+    "subject": "Weekly Team Sync - Agenda and Notes for Thursday",
+    "body": "Hi everyone, please add your updates to the shared agenda doc before our weekly sync on Thursday at 10 AM. We will discuss sprint velocity and milestones.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Maya Chen <mchen@product.com>",
+    "subject": "Re: Product launch assets and marketing timeline",
+    "body": "Here are the draft banners and copy for the v2 launch next month. Let me know your thoughts when you have time to review.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "GitHub <notifications@github.com>",
+    "subject": "[PR Review Requested] feature/auth: Add OAuth token refresh logic",
+    "body": "David has requested your review on pull request #148: Refactor authentication token refresh and add unit tests.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "David Miller <david.m@company.com>",
+    "subject": "Project status update - Sprint 14 progress",
+    "body": "Team, we have completed 8 of 12 user stories for Sprint 14. Remaining items are in QA review. Please update Jira tickets by Friday afternoon.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "The Bison Co. <invoicing@bisonco.com>",
+    "subject": "Invoice 08319 for September services",
+    "body": "Please find attached invoice 08319 for professional services rendered in August. Payment terms are net 30 days.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Design Team <design@company.com>",
+    "subject": "Figma review: New dashboard navigation mockups",
+    "body": "We updated the sidebar layout and icon styles based on team feedback. Feel free to leave comments in the Figma link by early next week.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "HR Department <hr@company.com>",
+    "subject": "Reminder: Quarterly performance reviews open next Monday",
+    "body": "Self-evaluations for Q3 will open on Monday, September 15. Please schedule 1-on-1 check-ins with your direct reports before the end of the month.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Emily Watson <emily.w@company.com>",
+    "subject": "Quick question regarding API schema documentation",
+    "body": "Hi! While integrating the email endpoint, I noticed the date format is ISO-8601. Is that standard across all microservices? Let me know when you get a moment.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Google Calendar <calendar-notification@google.com>",
+    "subject": "Invitation: Sprint Retrospective @ Fri Sep 12, 2026 2pm - 3pm",
+    "body": "You have been invited to Sprint Retrospective. Participants: engineering team. Agenda: what went well, what can be improved.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Slack <notification@slack.com>",
+    "subject": "New mentions in #engineering and #project-pulse",
+    "body": "You have 3 unread mentions from Alex and Maya regarding backend schema updates and test coverage requirements.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Dev Team <standup@company.com>",
+    "subject": "Daily Standup Notes - Tuesday",
+    "body": "Summary of today standup: Alex working on ML pipeline, Maya finalizing UI components, David investigating test suites. No blockers reported.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Office Operations <facilities@company.com>",
+    "subject": "Office maintenance scheduled for this weekend",
+    "body": "Please note that building power will be temporarily cycled this Saturday from 2 PM to 6 PM for scheduled electrical inspections.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Jordan Lee <jordan.lee@consulting.org>",
+    "subject": "Follow up on our discussion regarding database indexing",
+    "body": "Thanks for taking the time to chat earlier today. I have attached the benchmark report comparing compound indexes vs single field indexes for your review.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Notion <notify@m.notion.so>",
+    "subject": "Naomi Adams mentioned you in PriorityPulse Roadmap",
+    "body": "Naomi added a comment: Can we review this architectural diagram during our engineering sync tomorrow?",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Training & Development <learning@company.com>",
+    "subject": "Upcoming workshop: Advanced TypeScript & Node.js architecture",
+    "body": "Registration is open for the upcoming two-day internal engineering workshop on TypeScript design patterns. Register if interested.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "IT Helpdesk <helpdesk@company.com>",
+    "subject": "Ticket #4928 updated: VPN configuration profile verified",
+    "body": "Your IT request for VPN certificate renewal has been processed. Please download the configuration profile from the self-service portal.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Product Management <pm@company.com>",
+    "subject": "Customer feedback summary from August beta testing",
+    "body": "Attached is the synthesized feedback deck from our 50 beta test participants. Take a look before our product review next Wednesday.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Rachel Green <rachel.g@company.com>",
+    "subject": "Lunch and Learn presentation slides attached",
+    "body": "Thank you to everyone who joined today talk on React Server Components. The slides and recording link are available below.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Vendor Relations <orders@cloudhardware.com>",
+    "subject": "Order confirmation: Ergonomic monitor arms #84912",
+    "body": "Your equipment request has been approved and shipped. Estimated delivery date is Thursday next week. Tracking number enclosed.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Team Lead <lead@prioritypulse.ai>",
+    "subject": "Milestone 3 checkpoint: Backend API readiness",
+    "body": "Good progress this week. Let review test coverage and documentation on our standard Friday catchup. Have a great day.",
+    "label": "MEDIUM"
+  },
+  {
+    "sender": "Substack Newsletter <digest@substack.com>",
+    "subject": "The Weekly Byte: 10 Trends in Artificial Intelligence",
+    "body": "Welcome to this week edition of The Byte. In today issue, we cover the rise of small language models, open-weights benchmarks, and developer tooling.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Udemy Deals <promo@udemy.com>",
+    "subject": "Flash Sale: 85% off Web Development & Python courses for 48 hours",
+    "body": "Expand your skills with top-rated courses starting at just .99. Learn Python, Docker, React, and Machine Learning. Shop now before sale ends.",
+    "label": "LOW"
+  },
+  {
+    "sender": "LinkedIn <updates@linkedin.com>",
+    "subject": "Naomi, you appeared in 14 searches this week",
+    "body": "See who is looking at your profile and connect with colleagues in software engineering and cloud infrastructure.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Uber Eats <offers@ubereats.com>",
+    "subject": "Hungry? Get  off your next dinner order with code TASTY10",
+    "body": "Order from your favorite local restaurants today. Valid on orders over . Check out trending Thai, Italian, and Mexican spots near you.",
+    "label": "LOW"
+  },
+  {
+    "sender": "GitHub Explore <explore@github.com>",
+    "subject": "Trending open source projects this week on GitHub",
+    "body": "Discover top repositories in Python, Rust, and TypeScript trending across the open source developer community.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Medium Daily Digest <digest@medium.com>",
+    "subject": "Top stories for Naomi: Microservices architecture pitfalls",
+    "body": "Read the most recommended articles selected for you today on Medium. Bookmark and enjoy offline with Medium Membership.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Spotify <noreply@spotify.com>",
+    "subject": "Your Discover Weekly is ready - 30 fresh tracks curated for you",
+    "body": "We made a custom playlist based on your recent listening habits. Listen now to discover new ambient and electronic favorites.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Vercel Team <marketing@vercel.com>",
+    "subject": "Announcing Next.js Conf 2026 - Claim your free virtual ticket",
+    "body": "Join thousands of frontend developers online for keynote presentations, deep dive workshops, and community showcases. Register now.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Grammarly Insights <insights@grammarly.com>",
+    "subject": "Your weekly writing stats: 14,200 words written",
+    "body": "Here is your weekly summary. You were more productive than 88% of Grammarly users this week. Keep up the great streak!",
+    "label": "LOW"
+  },
+  {
+    "sender": "Figma Community <newsletter@figma.com>",
+    "subject": "Trending design systems and UI kits in Figma Community",
+    "body": "Check out the top community-built design templates, wireframe kits, and icon sets available for copy and remix.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Domino Pizza <deals@dominos.com>",
+    "subject": "Buy One Get One Free Pizza tonight only! Coupon inside",
+    "body": "Craving pizza? Order online and get a free medium pizza with any specialty pizza purchase. Enter coupon code BOGO at checkout.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Twitter / X <notify@x.com>",
+    "subject": "Highlights from accounts you follow on X",
+    "body": "Check out the top trending discussions and reposts from tech creators you follow this morning.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Duolingo <learn@duolingo.com>",
+    "subject": "Do not lose your 14-day streak! Practice Spanish now",
+    "body": "It only takes 3 minutes to keep your streak alive. Open Duolingo today and complete your daily practice lesson.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Amazon Deals <store-news@amazon.com>",
+    "subject": "Deals you might like based on your browsing history",
+    "body": "Save up to 40% on wireless keyboards, USB-C hubs, and desk accessories. Lightning deals valid while supplies last.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Product Hunt <daily@producthunt.com>",
+    "subject": "The top 5 product launches of the day",
+    "body": "Today #1 product: an AI-powered code review assistant. See what the tech community is upvoting today on Product Hunt.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Airbnb <marketing@airbnb.com>",
+    "subject": "Getaway inspiration: Unique weekend cabins near you",
+    "body": "Escape the city for a refreshing weekend break. Browse cozy mountain chalets and lakeside homes with fast Wi-Fi.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Coursera <recommendations@coursera.org>",
+    "subject": "Advance your career: Recommended Machine Learning specializations",
+    "body": "Explore hands-on courses from top universities. Earn a verified certificate upon completion. Enroll today for a 7-day free trial.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Notion Newsletter <community@m.notion.so>",
+    "subject": "Notion monthly recap: New features, templates, and community guides",
+    "body": "Check out our latest release notes, featuring database automation upgrades, formula enhancements, and template highlights.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Adobe Creative Cloud <mail@adobe.com>",
+    "subject": "Special offer: 20% discount on Creative Cloud All Apps plan",
+    "body": "Bring your creative ideas to life with Photoshop, Illustrator, Premiere Pro, and more. Upgrade your subscription today.",
+    "label": "LOW"
+  },
+  {
+    "sender": "Goodreads <news@goodreads.com>",
+    "subject": "Most anticipated new book releases for September",
+    "body": "Discover the most popular fiction, non-fiction, and science fiction books hitting the shelves this month voted by readers.",
+    "label": "LOW"
+  }
+]

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { BarChart3, Bell, ChevronRight, Inbox, LayoutDashboard, LogOut, Menu, Search, Settings, Star, X } from 'lucide-react';
 import PulseMark from './PulseMark.jsx';
+import { useAuthenticatedUser } from './ProtectedRoute.jsx';
 
 const links = [
   { label: 'Priority inbox', to: '/dashboard', icon: Inbox, end: true },
@@ -17,6 +18,9 @@ const links = [
 export default function DashboardLayout({ children, title }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const user = useAuthenticatedUser();
+  const userEmail = user?.email || 'Signed in';
+  const userInitials = user?.email?.slice(0, 2).toUpperCase() || 'PP';
   const signOut = () => { localStorage.removeItem('pp_token'); navigate('/login'); };
   return <div className="pp-app-shell">
     <aside className={`pp-sidebar${open ? ' is-open' : ''}`}>
@@ -27,8 +31,9 @@ export default function DashboardLayout({ children, title }) {
     </aside>
     {open && <button className="pp-scrim" onClick={() => setOpen(false)} aria-label="Close navigation" />}
     <div className="pp-app-main">
-      <header className="pp-topbar"><button className="pp-menu" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={21} /></button><div><p className="eyebrow"><span />PriorityPulse workspace</p><h1>{title}</h1></div><div className="pp-top-actions"><label className="pp-search"><Search size={16} /><input placeholder="Search inbox" /><kbd>/</kbd></label><button className="pp-icon-btn" onClick={() => navigate('/dashboard/notifications')} aria-label="Notifications"><Bell size={18} /><i /></button><button className="pp-user" aria-label="User menu"><span>NA</span><b>Naomi Adams</b></button></div></header>
+      <header className="pp-topbar"><button className="pp-menu" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={21} /></button><div><p className="eyebrow"><span />PriorityPulse workspace</p><h1>{title}</h1></div><div className="pp-top-actions"><label className="pp-search"><Search size={16} /><input placeholder="Search inbox" /><kbd>/</kbd></label><button className="pp-icon-btn" onClick={() => navigate('/dashboard/notifications')} aria-label="Notifications"><Bell size={18} /><i /></button><button className="pp-user" aria-label="User menu"><span>{userInitials}</span><b>{userEmail}</b></button></div></header>
       <main className="pp-content">{children}</main>
     </div>
   </div>;
 }
+

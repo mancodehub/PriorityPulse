@@ -16,7 +16,9 @@ import Footer from './components/Footer.jsx';
 import Navbar from './components/Navbar.jsx';
 import PulseMark from './components/PulseMark.jsx';
 import Login from './pages/Login.jsx';
-import Dashboard, { Analytics, Inbox, Notifications, Settings } from './pages/Dashboard.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import Dashboard, { Analytics, Inbox, Notifications } from './pages/Dashboard.jsx';
+import Settings from './pages/Settings.jsx';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -48,7 +50,7 @@ function Home() {
           <p className="hero-copy__lead">PriorityPulse spots the emails that demand attention, classifies their urgency, and gives your team a decisive next move.</p>
           <div className="hero-actions">
             <Link className="button button--primary" to="/login">See PriorityPulse in action <ArrowRight size={17} /></Link>
-            <Link className="text-link" to="/about">Explore how it works <span>↗</span></Link>
+            <Link className="text-link" to="/about">Explore how it works <span>â†—</span></Link>
           </div>
           <div className="hero-proof">
             <div className="avatar-stack" aria-hidden="true"><i>J</i><i>A</i><i>M</i><i>S</i></div>
@@ -60,7 +62,7 @@ function Home() {
 
       <section className="logo-strip">
         <p>Trusted by teams who value their time</p>
-        <div className="logo-row"><span>arc<sup>•</sup></span><span>VANTA</span><span>BUILD<span className="logo-dot">/</span>LAB</span><span className="serif-logo">northstar</span><span>THREAD</span></div>
+        <div className="logo-row"><span>arc<sup>â€¢</sup></span><span>VANTA</span><span>BUILD<span className="logo-dot">/</span>LAB</span><span className="serif-logo">northstar</span><span>THREAD</span></div>
       </section>
 
       <section className="section-wrap signal-section">
@@ -68,7 +70,7 @@ function Home() {
           <Eyebrow>Less inbox. More impact.</Eyebrow>
           <h2>The signal is already<br />in your <em>inbox.</em></h2>
         </div>
-        <p className="section-intro">PriorityPulse uses machine learning to understand what matters — not just what is loud.</p>
+        <p className="section-intro">PriorityPulse uses machine learning to understand what matters â€” not just what is loud.</p>
         <div className="feature-grid">
           <FeatureCard number="01" icon={<BrainCircuit />} title="Understands context" copy="Intent, sender history, language and timing become a clear priority score." />
           <FeatureCard number="02" icon={<Target />} title="Surfaces the essential" copy="Your important email arrives at the top, with exactly why it needs a response." />
@@ -100,7 +102,7 @@ function Home() {
       </section>
 
       <section className="section-wrap stats-section">
-        <div className="stat"><strong>3.6<span>×</span></strong><p>faster response to high-priority messages</p></div>
+        <div className="stat"><strong>3.6<span>Ã—</span></strong><p>faster response to high-priority messages</p></div>
         <div className="stat"><strong>92<span>%</span></strong><p>less manual inbox triage each week</p></div>
         <div className="stat"><strong>0</strong><p>critical messages left unseen</p></div>
       </section>
@@ -118,16 +120,16 @@ function MailPreview() {
         <aside className="preview-sidebar"><PulseMark compact /><div className="sidebar-lines"><i className="active" /><i /><i /><i /></div><div className="sidebar-user"><span>NA</span><i /></div></aside>
         <div className="mail-list">
           <div className="list-header"><span>Priority inbox</span><b>12</b></div>
-          <div className="mail-row selected"><span className="mail-initial coral">AP</span><p><b>Apex Financial</b><small>Q3 contract renewal — action required</small></p><em>now</em></div>
+          <div className="mail-row selected"><span className="mail-initial coral">AP</span><p><b>Apex Financial</b><small>Q3 contract renewal â€” action required</small></p><em>now</em></div>
           <div className="mail-row"><span className="mail-initial blue">M</span><p><b>Maya Chen</b><small>Re: Product launch assets</small></p><em>8m</em></div>
           <div className="mail-row"><span className="mail-initial lime">TB</span><p><b>The Bison Co.</b><small>Invoice 08319</small></p><em>21m</em></div>
           <div className="mail-row faded"><span className="mail-initial violet">V</span><p><b>Vercel</b><small>New project activity</small></p><em>1h</em></div>
         </div>
         <div className="mail-detail">
-          <div className="detail-head"><div><span className="priority-tag"><Zap size={12} /> high priority</span><h3>Q3 contract renewal — action required</h3><p>Apex Financial · to you</p></div><span className="detail-more">•••</span></div>
+          <div className="detail-head"><div><span className="priority-tag"><Zap size={12} /> high priority</span><h3>Q3 contract renewal â€” action required</h3><p>Apex Financial Â· to you</p></div><span className="detail-more">â€¢â€¢â€¢</span></div>
           <div className="ai-insight"><div className="ai-icon"><Sparkles size={15} /></div><p><b>PriorityPulse insight</b><span>Renewal deadline is tomorrow. Deal value and sender activity make this time-sensitive.</span></p><strong>98<span>%</span></strong></div>
-          <div className="mail-copy"><p>Hi Naomi,</p><p>We’re ready to move ahead with the renewal, but need the signed agreement returned before tomorrow’s board meeting.</p><p>Could you confirm it’s on track?</p><p>— Ana</p></div>
-          <div className="reply-bar"><span>Reply to Apex Financial...</span><kbd>⌘ ↵</kbd></div>
+          <div className="mail-copy"><p>Hi Naomi,</p><p>Weâ€™re ready to move ahead with the renewal, but need the signed agreement returned before tomorrowâ€™s board meeting.</p><p>Could you confirm itâ€™s on track?</p><p>â€” Ana</p></div>
+          <div className="reply-bar"><span>Reply to Apex Financial...</span><kbd>âŒ˜ â†µ</kbd></div>
         </div>
       </div>
       <div className="floating-notification"><span><BellRing size={14} /></span><p><b>Worth your attention</b><small>Apex Financial needs a reply</small></p><i /></div>
@@ -144,14 +146,14 @@ function About() {
     <>
       <section className="page-hero section-wrap about-hero">
         <div><Eyebrow>Our point of view</Eyebrow><h1>Work should move<br /><em>with intention.</em></h1></div>
-        <p>We’re building a world where attention is protected, decisions are clear, and important work never waits beneath an overflowing inbox.</p>
+        <p>Weâ€™re building a world where attention is protected, decisions are clear, and important work never waits beneath an overflowing inbox.</p>
       </section>
       <section className="section-wrap manifesto-section">
         <div className="manifesto-number">01</div>
-        <div className="manifesto-copy"><p className="overline">THE PRIORITYPULSE PRINCIPLE</p><h2>Attention is your team’s<br /><em>most precious resource.</em></h2><p className="body-large">Every day, capable people spend hours sorting through email to find the one thread that changes everything. We believe intelligent software should give that time back.</p><p>PriorityPulse began with a simple observation: email has all the context a team needs to act — it just needs to be understood. Our machine learning models turn that untapped context into an unmissable signal.</p></div>
+        <div className="manifesto-copy"><p className="overline">THE PRIORITYPULSE PRINCIPLE</p><h2>Attention is your teamâ€™s<br /><em>most precious resource.</em></h2><p className="body-large">Every day, capable people spend hours sorting through email to find the one thread that changes everything. We believe intelligent software should give that time back.</p><p>PriorityPulse began with a simple observation: email has all the context a team needs to act â€” it just needs to be understood. Our machine learning models turn that untapped context into an unmissable signal.</p></div>
       </section>
-      <section className="values-section"><div className="section-wrap"><div className="values-heading"><Eyebrow>What guides us</Eyebrow><h2>Designed for better<br /><em>days at work.</em></h2></div><div className="value-list"><Value index="01" title="Calm over chaos" copy="We make space for focus by making the urgent unmistakable." /><Value index="02" title="Signal over noise" copy="Every feature earns its place by helping people make a better decision." /><Value index="03" title="People before process" copy="The system adapts to the way your team works — never the other way around." /></div></div></section>
-      <section className="section-wrap about-quote"><span className="quote-mark">“</span><blockquote>The best technology doesn’t demand your attention. It gives it back.</blockquote><div><PulseMark compact /><p>PriorityPulse team<br /><span>Building a more focused future</span></p></div></section>
+      <section className="values-section"><div className="section-wrap"><div className="values-heading"><Eyebrow>What guides us</Eyebrow><h2>Designed for better<br /><em>days at work.</em></h2></div><div className="value-list"><Value index="01" title="Calm over chaos" copy="We make space for focus by making the urgent unmistakable." /><Value index="02" title="Signal over noise" copy="Every feature earns its place by helping people make a better decision." /><Value index="03" title="People before process" copy="The system adapts to the way your team works â€” never the other way around." /></div></div></section>
+      <section className="section-wrap about-quote"><span className="quote-mark">â€œ</span><blockquote>The best technology doesnâ€™t demand your attention. It gives it back.</blockquote><div><PulseMark compact /><p>PriorityPulse team<br /><span>Building a more focused future</span></p></div></section>
       <CtaPanel />
     </>
   );
@@ -164,9 +166,9 @@ function Contact() {
   const submit = (event) => { event.preventDefault(); setSubmitted(true); };
   return (
     <section className="contact-page section-wrap">
-      <div className="contact-intro"><Eyebrow>Let’s make room for what matters</Eyebrow><h1>Start the<br /><em>conversation.</em></h1><p>Tell us a little about your team. We’ll show you how PriorityPulse can turn your inbox into a calmer, smarter place to work.</p><div className="contact-direct"><a href="mailto:hello@prioritypulse.ai"><Mail size={17} /> hello@prioritypulse.ai</a><p>Usually replies within one business day.</p></div><div className="contact-orbits"><i /><i /></div></div>
+      <div className="contact-intro"><Eyebrow>Letâ€™s make room for what matters</Eyebrow><h1>Start the<br /><em>conversation.</em></h1><p>Tell us a little about your team. Weâ€™ll show you how PriorityPulse can turn your inbox into a calmer, smarter place to work.</p><div className="contact-direct"><a href="mailto:hello@prioritypulse.ai"><Mail size={17} /> hello@prioritypulse.ai</a><p>Usually replies within one business day.</p></div><div className="contact-orbits"><i /><i /></div></div>
       <div className="contact-card">
-        {submitted ? <SuccessMessage reset={() => setSubmitted(false)} /> : <form onSubmit={submit}><div className="form-heading"><span>01 / 01</span><h2>Tell us about you.</h2><p>We’ll only use this to get in touch about PriorityPulse.</p></div><div className="form-grid"><FormField label="Your name" name="name" placeholder="Jane Smith" required /><FormField label="Work email" name="email" type="email" placeholder="jane@company.com" required /><label className="form-field form-field--full"><span>What would you like to improve?</span><textarea name="message" rows="4" placeholder="My team spends too much time..." required /></label></div><label className="consent"><input type="checkbox" required /><span>I agree to receive a thoughtful follow-up from PriorityPulse.</span></label><button className="button button--primary submit-button" type="submit">Send my message <ArrowRight size={17} /></button></form>}
+        {submitted ? <SuccessMessage reset={() => setSubmitted(false)} /> : <form onSubmit={submit}><div className="form-heading"><span>01 / 01</span><h2>Tell us about you.</h2><p>Weâ€™ll only use this to get in touch about PriorityPulse.</p></div><div className="form-grid"><FormField label="Your name" name="name" placeholder="Jane Smith" required /><FormField label="Work email" name="email" type="email" placeholder="jane@company.com" required /><label className="form-field form-field--full"><span>What would you like to improve?</span><textarea name="message" rows="4" placeholder="My team spends too much time..." required /></label></div><label className="consent"><input type="checkbox" required /><span>I agree to receive a thoughtful follow-up from PriorityPulse.</span></label><button className="button button--primary submit-button" type="submit">Send my message <ArrowRight size={17} /></button></form>}
       </div>
     </section>
   );
@@ -174,10 +176,13 @@ function Contact() {
 
 function FormField({ label, name, type = 'text', placeholder, required }) { return <label className="form-field"><span>{label}</span><input name={name} type={type} placeholder={placeholder} required={required} /></label>; }
 
-function SuccessMessage({ reset }) { return <div className="form-success"><span className="success-icon"><Check size={26} /></span><p className="overline">Message received</p><h2>We’ve got it.</h2><p>Thank you for reaching out. One of our team will be in touch shortly.</p><button className="text-link text-link--dark" onClick={reset}>Send another message <ArrowRight size={16} /></button></div>; }
+function SuccessMessage({ reset }) { return <div className="form-success"><span className="success-icon"><Check size={26} /></span><p className="overline">Message received</p><h2>Weâ€™ve got it.</h2><p>Thank you for reaching out. One of our team will be in touch shortly.</p><button className="text-link text-link--dark" onClick={reset}>Send another message <ArrowRight size={16} /></button></div>; }
 
 function CtaPanel() { return <section className="section-wrap"><div className="cta-panel"><div className="cta-orbit cta-orbit--one" /><div className="cta-orbit cta-orbit--two" /><Eyebrow>Make your move</Eyebrow><h2>Stop sorting.<br />Start <em>moving.</em></h2><p>Give your team the signal it needs to do its best work.</p><Link className="button button--light" to="/contact">Talk to our team <ArrowRight size={17} /></Link><div className="cta-pulse"><PulseMark /><span>priority<br />pulse</span></div></div></section>; }
 
 export default function App() {
-  return <><ScrollToTop /><Routes><Route path="/login" element={<Login />} /><Route path="/dashboard" element={<Inbox />} /><Route path="/dashboard/overview" element={<Dashboard />} /><Route path="/dashboard/inbox" element={<Inbox />} /><Route path="/dashboard/important" element={<Inbox importantOnly />} /><Route path="/dashboard/medium" element={<Inbox initialFilter="MEDIUM" />} /><Route path="/dashboard/low" element={<Inbox initialFilter="LOW" />} /><Route path="/dashboard/analytics" element={<Analytics />} /><Route path="/dashboard/notifications" element={<Notifications />} /><Route path="/dashboard/settings" element={<Settings />} /><Route element={<Layout />}><Route path="/" element={<Home />} /><Route path="/about" element={<About />} /><Route path="/contact" element={<Contact />} /><Route path="*" element={<Home />} /></Route></Routes></>;
+  const protect = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
+
+  return <><ScrollToTop /><Routes><Route path="/login" element={<Login />} /><Route path="/dashboard" element={protect(<Inbox />)} /><Route path="/dashboard/overview" element={protect(<Dashboard />)} /><Route path="/dashboard/inbox" element={protect(<Inbox />)} /><Route path="/dashboard/important" element={protect(<Inbox importantOnly />)} /><Route path="/dashboard/medium" element={protect(<Inbox initialFilter="MEDIUM" />)} /><Route path="/dashboard/low" element={protect(<Inbox initialFilter="LOW" />)} /><Route path="/dashboard/analytics" element={protect(<Analytics />)} /><Route path="/dashboard/notifications" element={protect(<Notifications />)} /><Route path="/dashboard/settings" element={protect(<Settings />)} /><Route element={<Layout />}><Route path="/" element={<Home />} /><Route path="/about" element={<About />} /><Route path="/contact" element={<Contact />} /><Route path="*" element={<Home />} /></Route></Routes></>;
 }
+

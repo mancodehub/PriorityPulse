@@ -3,26 +3,39 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
+
 const authRoutes = require("./routes/authRoutes");
 const emailRoutes = require("./routes/emailRoutes");
+const gmailRoutes = require("./routes/gmailRoutes");
+
 const errorHandler = require("./middleware/errorHandler");
 const notFound = require("./middleware/notFound");
 
 const app = express();
-const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
 
+const allowedOrigin =
+  process.env.CLIENT_URL || "http://localhost:5173";
+
+// ==========================================
+// MIDDLEWARE
+// ==========================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(
   cors({
     origin: allowedOrigin,
     credentials: true,
   })
 );
+
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(cookieParser());
 
+// ==========================================
+// HEALTH CHECK
+// ==========================================
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -31,9 +44,18 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// ==========================================
+// API ROUTES
+// ==========================================
 app.use("/api/auth", authRoutes);
+
 app.use("/api/emails", emailRoutes);
 
+app.use("/api/gmail", gmailRoutes);
+
+// ==========================================
+// ERROR HANDLING
+// ==========================================
 app.use(notFound);
 app.use(errorHandler);
 

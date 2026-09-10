@@ -1,106 +1,166 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
-const Otp = require("../models/Otp");
 const HttpError = require("../utils/httpError");
 const asyncHandler = require("../utils/asyncHandler");
+const { sendOtpEmail } = require("../config/email");
 
-const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 10);
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// ==========================================
+// DEVELOPMENT OTP STORE
+// ==========================================
+// For development/testing only.
+// In production, use MongoDB/Redis with expiry.
+const otpStore = new Map();
 
-const normalizeEmail = (email = "") => email.trim().toLowerCase();
+const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
-const signToken = (user) =>
-  jwt.sign({ userId: user._id.toString(), email: user.email }, process.env.JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+// ==========================================
+// GENERATE 6 DIGIT OTP
+// ==========================================
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
+// ==========================================
+// POST /api/auth/send-otp
+// ==========================================
 const sendOtp = asyncHandler(async (req, res) => {
-  const email = normalizeEmail(req.body.email);
+  const { email } = req.body;
 
-  if (!emailRegex.test(email)) {
-    throw new HttpError("Enter a valid email address.", 400);
+  if (!email) {
+    throw new HttpError("Email is required", 400);
   }
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const codeHash = await bcrypt.hash(otp, 10);
-  const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+  const normalizedEmail = email.toLowerCase().trim();
 
-  await Otp.deleteMany({ email, consumedAt: null });
-  await Otp.create({ email, codeHash, expiresAt });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const response = {
+  if (!emailRegex.test(normalizedEmail)) {
+    throw new HttpError("Please enter a valid email address", 400);
+  }
+
+  const otp = generateOtp();
+
+  const hashedOtp = await bcrypt.hash(otp, 10);
+
+  otpStore.set(normalizedEmail, {
+    hashedOtp,
+    expiresAt: Date.now() + OTP_EXPIRY_MS,
+  });
+
+  await sendOtpEmail(normalizedEmail, otp);
+
+  console.log(`OTP email sent to ${normalizedEmail}`);
+
+  return res.status(200).json({
     success: true,
-    message: "OTP sent successfully.",
-  };
-
-  if (process.env.NODE_ENV !== "production") {
-    response.otp = otp;
-  }
-
-  res.status(200).json(response);
+    message: "OTP sent successfully",
+  });
 });
 
+// ==========================================
+// POST /api/auth/verify-otp
+// ==========================================
 const verifyOtp = asyncHandler(async (req, res) => {
-  const email = normalizeEmail(req.body.email);
-  const otp = String(req.body.otp || "").trim();
+  const { email, otp } = req.body;
 
-  if (!emailRegex.test(email)) {
-    throw new HttpError("Enter a valid email address.", 400);
+  if (!email || !otp) {
+    throw new HttpError("Email and OTP are required", 400);
   }
 
-  if (!/^\d{6}$/.test(otp)) {
-    throw new HttpError("Enter a valid 6-digit OTP.", 400);
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const storedOtp = otpStore.get(normalizedEmail);
+
+  if (!storedOtp) {
+    throw new HttpError(
+      "OTP not found. Please request a new code.",
+      400
+    );
   }
 
-  const otpRecord = await Otp.findOne({
-    email,
-    consumedAt: null,
-    expiresAt: { $gt: new Date() },
-  }).sort({ createdAt: -1 });
+  // Check expiration
+  if (Date.now() > storedOtp.expiresAt) {
+    otpStore.delete(normalizedEmail);
 
-  if (!otpRecord) {
-    throw new HttpError("OTP is invalid or has expired.", 400);
+    throw new HttpError(
+      "OTP has expired. Please request a new code.",
+      400
+    );
   }
 
-  if (otpRecord.attempts >= 5) {
-    throw new HttpError("Too many OTP attempts. Request a new code.", 429);
+  // Compare OTP
+  const isValidOtp = await bcrypt.compare(
+    otp.toString(),
+    storedOtp.hashedOtp
+  );
+
+  if (!isValidOtp) {
+    throw new HttpError("Invalid OTP", 400);
   }
 
-  const isMatch = await bcrypt.compare(otp, otpRecord.codeHash);
-  otpRecord.attempts += 1;
+  // OTP can only be used once
+  otpStore.delete(normalizedEmail);
 
-  if (!isMatch) {
-    await otpRecord.save();
-    throw new HttpError("OTP is invalid or has expired.", 400);
+  // Find existing user or create new user
+  let user = await User.findOne({
+    email: normalizedEmail,
+  });
+
+  if (!user) {
+    user = await User.create({
+      email: normalizedEmail,
+      lastLoginAt: new Date(),
+    });
+  } else {
+    user.lastLoginAt = new Date();
+    await user.save();
   }
 
-  otpRecord.consumedAt = new Date();
-  await otpRecord.save();
+  // Create JWT
+  const token = jwt.sign(
+    {
+      userId: user._id.toString(),
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
 
-  const user = await User.findOneAndUpdate(
-    { email },
-    { $set: { lastLoginAt: new Date() }, $setOnInsert: { email } },
-    { new: true, upsert: true, runValidators: true }
-  ).select("-__v");
-
-  const token = signToken(user);
-
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
+    message: "Login successful",
     token,
-    user,
+    user: {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+    },
   });
 });
 
+// ==========================================
+// GET /api/auth/me
+// ==========================================
 const getMe = asyncHandler(async (req, res) => {
-  res.status(200).json({
+  // req.user comes from authMiddleware
+  return res.status(200).json({
     success: true,
-    user: req.user,
+    user: {
+      id: req.user._id,
+      email: req.user.email,
+      name: req.user.name,
+      gmailConnected: req.user.gmailConnected,
+      googleEmail: req.user.googleEmail,
+    },
   });
 });
 
+// ==========================================
+// EXPORT CONTROLLERS
+// ==========================================
 module.exports = {
   sendOtp,
   verifyOtp,
