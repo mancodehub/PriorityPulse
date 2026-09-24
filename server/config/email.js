@@ -11,21 +11,18 @@ let transporter = null;
 
 if (smtpUserConfigured && smtpPassConfigured) {
   transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.SMTP_USER.trim(),
-      pass: process.env.SMTP_PASS.trim(),
-    },
-    // Reasonable timeouts to prevent hanging sockets
-    connectionTimeout: 10000, // 10 seconds to establish TCP connection
-    greetingTimeout: 10000,   // 10 seconds for SMTP greeting
-    socketTimeout: 15000,     // 15 seconds for socket inactivity
-    pool: true,               // Keep connections open to speed up OTP delivery
-    maxConnections: 3,
-    maxMessages: 100,
-  });
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  requireTLS: true,
+  auth: {
+    user: process.env.SMTP_USER.trim(),
+    pass: process.env.SMTP_PASS.trim(),
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 10000,
+  socketTimeout: 20000,
+});
 } else {
   console.error("Configuration Error: SMTP_USER and/or SMTP_PASS missing in environment variables.");
 }
