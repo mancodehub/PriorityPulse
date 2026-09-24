@@ -6,8 +6,16 @@ import {
   Mail,
   CheckCircle2,
   ExternalLink,
+  Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react';
-import api from '../api/client';
+import api, {
+  createKeyword,
+  deleteKeyword,
+  fetchKeywords,
+  updateKeyword,
+} from '../api/client';
 import DashboardLayout from '../components/DashboardLayout.jsx';
 
 function Settings() {
@@ -18,6 +26,12 @@ function Settings() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [keywords, setKeywords] = useState([]);
+  const [keywordLoading, setKeywordLoading] = useState(true);
+  const [keywordError, setKeywordError] = useState('');
+  const [keywordForm, setKeywordForm] = useState(null);
+  const [keywordSaving, setKeywordSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -52,10 +66,83 @@ function Settings() {
 
     checkStatus();
 
+    fetchKeywords()
+      .then((response) => {
+        if (active) setKeywords(response.data?.keywords || []);
+      })
+      .catch((err) => {
+        if (active) setKeywordError(err.response?.data?.message || 'Unable to load custom keywords.');
+      })
+      .finally(() => {
+        if (active) setKeywordLoading(false);
+      });
+
     return () => {
       active = false;
     };
   }, []);
+
+  const openKeywordForm = (keyword = null, priority = 'HIGH') => {
+    setKeywordForm({
+      id: keyword?._id || '',
+      keyword: keyword?.keyword || '',
+      priority: keyword?.priority || priority,
+      enabled: keyword?.enabled ?? true,
+    });
+    setKeywordError('');
+  };
+
+  const saveKeyword = async (event) => {
+    event.preventDefault();
+    if (!keywordForm?.keyword.trim()) {
+      setKeywordError('Keyword cannot be empty.');
+      return;
+    }
+
+    try {
+      setKeywordSaving(true);
+      const payload = {
+        keyword: keywordForm.keyword.trim(),
+        priority: keywordForm.priority,
+        enabled: keywordForm.enabled,
+      };
+      const response = keywordForm.id
+        ? await updateKeyword(keywordForm.id, payload)
+        : await createKeyword(payload);
+      const saved = response.data?.keyword;
+      setKeywords((current) => keywordForm.id
+        ? current.map((item) => item._id === keywordForm.id ? saved : item)
+        : [...current, saved]);
+      setKeywordForm(null);
+      setSuccessMessage(keywordForm.id ? 'Custom keyword updated.' : 'Custom keyword added.');
+    } catch (err) {
+      setKeywordError(err.response?.data?.message || 'Unable to save custom keyword.');
+    } finally {
+      setKeywordSaving(false);
+    }
+  };
+
+  const toggleKeyword = async (keyword) => {
+    try {
+      const response = await updateKeyword(keyword._id, { enabled: !keyword.enabled });
+      setKeywords((current) => current.map((item) => item._id === keyword._id ? response.data.keyword : item));
+    } catch (err) {
+      setKeywordError(err.response?.data?.message || 'Unable to update custom keyword.');
+    }
+  };
+
+  const removeKeyword = async (id) => {
+    try {
+      await deleteKeyword(id);
+      setKeywords((current) => current.filter((item) => item._id !== id));
+      setConfirmDeleteId('');
+      setSuccessMessage('Custom keyword deleted.');
+    } catch (err) {
+      setKeywordError(err.response?.data?.message || 'Unable to delete custom keyword.');
+    }
+  };
+
+  const keywordsByPriority = (priority) => keywords.filter((keyword) => keyword.priority === priority);
 
   const connectGmail = async () => {
     try {
@@ -248,6 +335,106 @@ function Settings() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Custom keyword rules */}
+        <div className="rounded-[28px] border border-[color:var(--hairline)] bg-[color:var(--panel)]/80 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[color:var(--text)]">
+                <SlidersHorizontal className="h-4 w-4 text-[color:var(--teal)]" />
+                <h3 className="font-display text-lg font-semibold">Custom keyword priority</h3>
+              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]">
+                Matching keywords in new email subjects or bodies appear in your separate custom inbox. ML remains the source of email priority.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openKeywordForm()}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[color:var(--ember)] px-4 py-2.5 text-sm font-semibold text-black transition hover:opacity-90"
+            >
+              <Plus className="h-4 w-4" /> Add keyword
+            </button>
+            <button
+              type="button"
+              onClick={() => { window.location.href = '/dashboard/custom-keywords'; }}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[color:var(--hairline)] px-4 py-2.5 text-sm text-[color:var(--text-muted)] transition hover:text-[color:var(--text)]"
+            >
+              Open custom inbox
+            </button>
+          </div>
+
+          {keywordError && (
+            <div className="mt-4 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+              {keywordError}
+            </div>
+          )}
+
+          {keywordForm && (
+            <form onSubmit={saveKeyword} className="mt-5 rounded-2xl border border-[color:var(--hairline)] bg-white/[0.03] p-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_160px_auto] sm:items-end">
+                <label className="text-sm text-[color:var(--text-muted)]">
+                  Keyword or phrase
+                  <input
+                    autoFocus
+                    value={keywordForm.keyword}
+                    onChange={(event) => setKeywordForm((current) => ({ ...current, keyword: event.target.value }))}
+                    maxLength={120}
+                    placeholder="e.g. payment overdue"
+                    className="mt-2 w-full rounded-xl border border-[color:var(--hairline)] bg-black/20 px-3 py-2.5 text-sm text-[color:var(--text)] outline-none focus:border-[color:var(--ember)]"
+                  />
+                </label>
+                <label className="text-sm text-[color:var(--text-muted)]">
+                  Priority
+                  <select
+                    value={keywordForm.priority}
+                    onChange={(event) => setKeywordForm((current) => ({ ...current, priority: event.target.value }))}
+                    className="mt-2 w-full rounded-xl border border-[color:var(--hairline)] bg-[color:var(--panel)] px-3 py-2.5 text-sm text-[color:var(--text)] outline-none focus:border-[color:var(--ember)]"
+                  >
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                  </select>
+                </label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setKeywordForm(null)} className="rounded-xl border border-[color:var(--hairline)] px-3 py-2.5 text-sm text-[color:var(--text-muted)] hover:text-[color:var(--text)]">Cancel</button>
+                  <button type="submit" disabled={keywordSaving} className="rounded-xl bg-[color:var(--teal)] px-3 py-2.5 text-sm font-semibold text-black disabled:opacity-60">{keywordSaving ? 'Saving…' : 'Save'}</button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {keywordLoading ? (
+            <p className="mt-5 text-sm text-[color:var(--text-muted)]">Loading keywords…</p>
+          ) : (
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {['HIGH', 'MEDIUM', 'LOW'].map((priority) => (
+                <div key={priority} className="rounded-2xl border border-[color:var(--hairline)] bg-white/[0.03] p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold tracking-[0.18em] text-[color:var(--text-muted)]">{priority}</p>
+                    <button type="button" onClick={() => openKeywordForm(null, priority)} className="text-xs text-[color:var(--ember)] hover:underline">Add</button>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {keywordsByPriority(priority).length === 0 ? (
+                      <p className="text-sm text-[color:var(--text-muted)]">No rules yet.</p>
+                    ) : keywordsByPriority(priority).map((item) => (
+                      <div key={item._id} className="flex items-center gap-2 rounded-xl border border-[color:var(--hairline)] px-3 py-2">
+                        <span className={`min-w-0 flex-1 truncate text-sm ${item.enabled ? 'text-[color:var(--text)]' : 'text-[color:var(--text-muted)] line-through'}`}>{item.keyword}</span>
+                        <button type="button" title="Edit keyword" onClick={() => openKeywordForm(item)} className="text-[color:var(--text-muted)] hover:text-[color:var(--text)]"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => toggleKeyword(item)} className="text-xs text-[color:var(--teal)]">{item.enabled ? 'On' : 'Off'}</button>
+                        {confirmDeleteId === item._id ? (
+                          <button type="button" onClick={() => removeKeyword(item._id)} className="text-xs text-red-300">Confirm</button>
+                        ) : (
+                          <button type="button" title="Delete keyword" onClick={() => setConfirmDeleteId(item._id)} className="text-[color:var(--text-muted)] hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       {/* Notification + Dashboard */}

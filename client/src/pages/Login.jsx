@@ -1,10 +1,10 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { sendOtp, verifyOtp } from '../api/client';
 import OtpInput from '../components/OtpInput';
 
-const RESEND_COOLDOWN = 30; // seconds
+const RESEND_COOLDOWN = 60; // 60 seconds resend cooldown
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,19 +27,37 @@ export default function Login() {
   const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
   const requestOtp = async (isResend = false) => {
-    if (!isValidEmail(email)) {
+    if (loading) return;
+    const cleanEmail = email.trim();
+    if (!isValidEmail(cleanEmail)) {
       setError('Enter a valid email address.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await sendOtp(email);
-      setStep('otp');
-      setCooldown(RESEND_COOLDOWN);
-      if (!isResend) setOtp('');
+      const response = await sendOtp(cleanEmail);
+      if (response.data?.success) {
+        setStep('otp');
+        setCooldown(RESEND_COOLDOWN);
+        if (!isResend) setOtp('');
+      } else {
+        setError(response.data?.message || 'Could not send the code. Try again.');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not send the code. Try again.');
+      const serverMessage = err.response?.data?.message;
+      if (serverMessage) {
+        setError(serverMessage);
+        if (err.response?.status === 429 && err.response?.data?.retryAfter) {
+          setCooldown(err.response.data.retryAfter);
+        }
+      } else if (err.code === 'ECONNABORTED' || err.message?.toLowerCase().includes('timeout')) {
+        setError('Request timed out. Please check your connection and try again.');
+      } else if (!err.response) {
+        setError('Unable to connect to server. Please check your network and try again.');
+      } else {
+        setError('Could not send the code. Try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,6 +65,7 @@ export default function Login() {
 
   const submitOtp = async (e) => {
     e.preventDefault();
+    if (loading) return;
     if (otp.length !== 6) {
       setError('Enter all 6 digits.');
       return;
@@ -54,7 +73,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const { data } = await verifyOtp(email, otp);
+      const { data } = await verifyOtp(email.trim(), otp);
       if (!data.token) throw new Error('Missing authentication token.');
       localStorage.setItem('pp_token', data.token);
       navigate('/dashboard');
@@ -90,7 +109,7 @@ export default function Login() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    requestOtp(false);
+                    if (!loading) requestOtp(false);
                   }}
                   className="mt-6 space-y-4"
                 >
@@ -105,8 +124,9 @@ export default function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink/30"
+                        className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink/30 disabled:opacity-50"
                         autoFocus
+                        disabled={loading}
                       />
                     </div>
                   </label>
@@ -115,11 +135,11 @@ export default function Login() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !email.trim()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-ink py-3 text-sm font-medium text-white transition hover:bg-cobalt disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {loading ? 'Sending code' : 'Continue with email'}
+                    {loading ? 'Sending code...' : 'Continue with email'}
                   </button>
                 </form>
               </>
@@ -166,8 +186,11 @@ export default function Login() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => requestOtp(true)}
-                        className="font-medium text-cobalt hover:underline"
+                        disabled={loading || cooldown > 0}
+                        onClick={() => {
+                          if (!loading && cooldown <= 0) requestOtp(true);
+                        }}
+                        className="font-medium text-cobalt hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Resend code
                       </button>

@@ -1,8 +1,9 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { BarChart3, Bell, ChevronRight, Inbox, LayoutDashboard, LogOut, Menu, Search, Settings, Star, X } from 'lucide-react';
 import PulseMark from './PulseMark.jsx';
 import { useAuthenticatedUser } from './ProtectedRoute.jsx';
+import { disconnectSocket } from '../socket.js';
 
 const links = [
   { label: 'Priority inbox', to: '/dashboard', icon: Inbox, end: true },
@@ -21,7 +22,7 @@ export default function DashboardLayout({ children, title }) {
   const user = useAuthenticatedUser();
   const userEmail = user?.email || 'Signed in';
   const userInitials = user?.email?.slice(0, 2).toUpperCase() || 'PP';
-  const signOut = () => { localStorage.removeItem('pp_token'); navigate('/login'); };
+  const signOut = () => { disconnectSocket(); localStorage.removeItem('pp_token'); navigate('/login'); };
   return <div className="pp-app-shell">
     <aside className={`pp-sidebar${open ? ' is-open' : ''}`}>
       <div className="pp-sidebar-brand"><NavLink to="/dashboard" className="brand"><PulseMark /><span>priority<span>pulse</span></span></NavLink><button className="pp-close" onClick={() => setOpen(false)} aria-label="Close menu"><X size={19} /></button></div>

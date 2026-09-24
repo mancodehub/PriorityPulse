@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Bell,
   Check,
@@ -19,8 +19,16 @@ import LoadingSkeleton from '../components/LoadingSkeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
 import Toast from '../components/Toast.jsx';
+import AIInsight from '../components/AIInsight.jsx';
 
-import { fetchEmails } from '../api/client.js';
+import {
+  fetchEmailAnalytics,
+  fetchAIInsights,
+  fetchEmails,
+  markEmailRead,
+  syncEmails,
+} from '../api/client.js';
+import { getSocket } from '../socket.js';
 
 function Page({ title, children }) {
   return (
@@ -39,8 +47,23 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [gmailNotConnected, setGmailNotConnected] = useState(false);
+  const [toast, setToast] = useState('');
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState(false);
+  const [aiInsights, setAiInsights] = useState(null);
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(true);
+  const [aiInsightsError, setAiInsightsError] = useState(false);
+
+  const loadingRef = useRef(false);
+  const analyticsLoadingRef = useRef(false);
+  const aiInsightsLoadingRef = useRef(false);
+  const analyticsRefreshTimerRef = useRef(null);
 
   const loadDashboardEmails = async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+
     try {
       setLoading(true);
       setLoadError(false);
@@ -58,6 +81,7 @@ export default function Dashboard() {
       setLoadError(true);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
@@ -65,22 +89,122 @@ export default function Dashboard() {
     loadDashboardEmails();
   }, []);
 
-  const totalEmails = emails.length;
+  const loadDashboardAnalytics = useCallback(async () => {
+    if (analyticsLoadingRef.current) return;
+    analyticsLoadingRef.current = true;
 
-  const highPriorityEmails = emails.filter(
-    (email) => email.priority === 'HIGH'
-  ).length;
+    try {
+      setAnalyticsLoading(true);
+      setAnalyticsError(false);
+      const { data } = await fetchEmailAnalytics();
+      setAnalytics(data?.analytics || null);
+    } catch (error) {
+      console.error('Failed to load dashboard analytics:', error);
+      setAnalyticsError(true);
+      setToast('Analytics are temporarily unavailable. Your inbox is still available.');
+    } finally {
+      setAnalyticsLoading(false);
+      analyticsLoadingRef.current = false;
+    }
+  }, []);
 
-  const unreadEmails = emails.filter(
-    (email) => email.unread
-  ).length;
+  const loadAIInsights = useCallback(async () => {
+    if (aiInsightsLoadingRef.current) return;
+    aiInsightsLoadingRef.current = true;
 
-  const aiProcessedEmails = emails.filter(
-    (email) =>
-      email.priority === 'HIGH' ||
-      email.priority === 'MEDIUM' ||
-      email.priority === 'LOW'
-  ).length;
+    try {
+      setAiInsightsLoading(true);
+      setAiInsightsError(false);
+      const { data } = await fetchAIInsights();
+      setAiInsights(data?.insights || null);
+    } catch (error) {
+      console.error('Failed to load AI insights:', error);
+      setAiInsightsError(true);
+    } finally {
+      setAiInsightsLoading(false);
+      aiInsightsLoadingRef.current = false;
+    }
+  }, []);
+
+  const scheduleAnalyticsRefresh = useCallback(() => {
+    if (analyticsRefreshTimerRef.current) {
+      clearTimeout(analyticsRefreshTimerRef.current);
+    }
+    analyticsRefreshTimerRef.current = setTimeout(() => {
+      loadDashboardAnalytics();
+      loadAIInsights();
+    }, 250);
+  }, [loadAIInsights, loadDashboardAnalytics]);
+
+  useEffect(() => {
+    loadDashboardAnalytics();
+    loadAIInsights();
+
+    const handleEmailChange = () => scheduleAnalyticsRefresh();
+    window.addEventListener('prioritypulse:emails-changed', handleEmailChange);
+
+    return () => {
+      window.removeEventListener('prioritypulse:emails-changed', handleEmailChange);
+      if (analyticsRefreshTimerRef.current) {
+        clearTimeout(analyticsRefreshTimerRef.current);
+      }
+    };
+  }, [loadAIInsights, loadDashboardAnalytics, scheduleAnalyticsRefresh]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return undefined;
+
+    const handleNewEmail = (incoming) => {
+      if (!incoming) return;
+
+      scheduleAnalyticsRefresh();
+
+      setEmails((currentEmails) => {
+        const incomingId = incoming.id || incoming.gmailMessageId;
+        const exists = currentEmails.some(
+          (email) =>
+            email.id === incomingId || email.gmailMessageId === incomingId
+        );
+
+        if (exists) {
+          return currentEmails.map((email) =>
+            email.id === incomingId || email.gmailMessageId === incomingId
+              ? { ...email, ...incoming }
+              : email
+          );
+        }
+
+        const next = [incoming, ...currentEmails];
+        return next.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      });
+    };
+
+    const handleHighPriority = () => {
+      setToast('New high-priority email detected');
+    };
+
+    socket.on('new-email', handleNewEmail);
+    socket.on('high-priority-email', handleHighPriority);
+    socket.on('email-updated', scheduleAnalyticsRefresh);
+
+    return () => {
+      socket.off('new-email', handleNewEmail);
+      socket.off('high-priority-email', handleHighPriority);
+      socket.off('email-updated', scheduleAnalyticsRefresh);
+    };
+  }, [scheduleAnalyticsRefresh]);
+
+  const priorityDistribution = analytics?.priorityDistribution || {};
+  const totalEmails = analytics?.totalEmails ?? 0;
+
+  const highPriorityEmails = analytics?.highPriority ?? priorityDistribution.HIGH ?? 0;
+  const mediumPriorityEmails = analytics?.mediumPriority ?? priorityDistribution.MEDIUM ?? 0;
+  const lowPriorityEmails = analytics?.lowPriority ?? priorityDistribution.LOW ?? 0;
+
+  const unreadEmails = analytics?.unreadEmails ?? 0;
+
+  const aiProcessedEmails = highPriorityEmails + mediumPriorityEmails + lowPriorityEmails;
 
   return (
     <Page title="Dashboard">
@@ -121,27 +245,27 @@ export default function Dashboard() {
 
         <StatCard
           label="Total emails"
-          value={loading ? '—' : totalEmails}
-          note="Emails currently loaded"
+          value={analyticsLoading ? '—' : totalEmails}
+          note="Emails in MongoDB"
         />
 
         <StatCard
           label="High priority"
-          value={loading ? '—' : highPriorityEmails}
+          value={analyticsLoading ? '—' : highPriorityEmails}
           note="Need attention"
           accent="pp-stat-card--coral"
         />
 
         <StatCard
           label="Unread"
-          value={loading ? '—' : unreadEmails}
+          value={analyticsLoading ? '—' : unreadEmails}
           note="Unread messages"
         />
 
         <StatCard
           label="AI processed"
-          value={loading ? '—' : aiProcessedEmails}
-          note="Currently classified"
+          value={analyticsLoading ? '—' : aiProcessedEmails}
+          note="Stored classifications"
           accent="pp-stat-card--lime"
         />
 
@@ -242,7 +366,9 @@ export default function Dashboard() {
           <div className="pp-signal-score">
 
             <strong>
-              {totalEmails > 0 ? '92' : '0'}
+              {analyticsLoading ? '—' : totalEmails > 0
+                ? Math.round((aiProcessedEmails / totalEmails) * 100)
+                : '0'}
               <span>%</span>
             </strong>
 
@@ -265,7 +391,7 @@ export default function Dashboard() {
                 <b
                   style={{
                     width:
-                      totalEmails > 0
+                      !analyticsLoading && totalEmails > 0
                         ? `${Math.min(
                             (highPriorityEmails / totalEmails) * 100,
                             100
@@ -276,7 +402,7 @@ export default function Dashboard() {
               </i>
 
               <em>
-                {highPriorityEmails}
+                {analyticsLoading ? '—' : highPriorityEmails}
               </em>
             </div>
 
@@ -290,13 +416,9 @@ export default function Dashboard() {
                   className="medium"
                   style={{
                     width:
-                      totalEmails > 0
+                      !analyticsLoading && totalEmails > 0
                         ? `${Math.min(
-                            (emails.filter(
-                              (email) =>
-                                email.priority === 'MEDIUM'
-                            ).length /
-                              totalEmails) *
+                            (mediumPriorityEmails / totalEmails) *
                               100,
                             100
                           )}%`
@@ -306,11 +428,7 @@ export default function Dashboard() {
               </i>
 
               <em>
-                {
-                  emails.filter(
-                    (email) => email.priority === 'MEDIUM'
-                  ).length
-                }
+                {analyticsLoading ? '—' : mediumPriorityEmails}
               </em>
             </div>
 
@@ -324,13 +442,9 @@ export default function Dashboard() {
                   className="low"
                   style={{
                     width:
-                      totalEmails > 0
+                      !analyticsLoading && totalEmails > 0
                         ? `${Math.min(
-                            (emails.filter(
-                              (email) =>
-                                email.priority === 'LOW'
-                            ).length /
-                              totalEmails) *
+                            (lowPriorityEmails / totalEmails) *
                               100,
                             100
                           )}%`
@@ -340,11 +454,7 @@ export default function Dashboard() {
               </i>
 
               <em>
-                {
-                  emails.filter(
-                    (email) => email.priority === 'LOW'
-                  ).length
-                }
+                {analyticsLoading ? '—' : lowPriorityEmails}
               </em>
             </div>
 
@@ -355,16 +465,25 @@ export default function Dashboard() {
             <TrendingUp size={16} />
 
             <span>
-              AI classification will become smarter
-              once the ML model is connected.
+              {analyticsLoading
+                ? 'Loading analytics…'
+                : analyticsError
+                ? 'Analytics could not be refreshed. Inbox data remains available.'
+                : `${analytics?.todayEmails || 0} emails today · ${analytics?.weekEmails || 0} in the last 7 days.`}
             </span>
 
           </div>
 
+          <AIInsight
+            insights={aiInsights}
+            loading={aiInsightsLoading}
+            insightsError={aiInsightsError}
+          />
+
         </section>
 
       </div>
-
+      <Toast message={toast} onClose={() => setToast('')} />
     </Page>
   );
 }
@@ -380,15 +499,26 @@ export function Inbox({
   const [emails, setEmails] = useState([]);
   const [selected, setSelected] = useState(null);
 
-  const [filter, setFilter] = useState(
-    importantOnly ? 'HIGH' : initialFilter
-  );
-
+  const defaultPriority = importantOnly ? 'HIGH' : initialFilter;
+  const [filter, setFilter] = useState(defaultPriority);
   const [status, setStatus] = useState('ALL');
-
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+  });
 
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -397,107 +527,266 @@ export function Inbox({
 
   const [toast, setToast] = useState('');
 
+  // 350ms search input debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   /* ---------------------------------------------------------
-     LOAD REAL GMAIL EMAILS
+     LOAD REAL GMAIL EMAILS (WITH ADVANCED FILTERS & PAGINATION)
   --------------------------------------------------------- */
 
-  const loadEmails = async () => {
-    try {
-      setLoadError(false);
-      setLoading(true);
-
-      const { data } = await fetchEmails();
-
-      setEmails(data.emails || []);
-
-      /*
-       * If the currently selected email no longer exists,
-       * clear it.
-       */
-      if (selected) {
-        const stillExists = (data.emails || []).some(
-          (email) => email.id === selected.id
-        );
-
-        if (!stillExists) {
-          setSelected(null);
+  const loadEmails = useCallback(
+    async (isInitial = false) => {
+      try {
+        setLoadError(false);
+        if (isInitial) {
+          setInitialLoading(true);
+        } else {
+          setIsFiltering(true);
         }
-      }
 
+        const params = {};
+        if (debouncedQuery) params.search = debouncedQuery;
+        if (filter && filter !== 'ALL') params.priority = filter;
+        if (status === 'UNREAD') params.unread = 'true';
+        if (status === 'READ') params.unread = 'false';
+        if (dateFrom) params.from = dateFrom;
+        if (dateTo) params.to = dateTo;
+        if (sort && sort !== 'newest') params.sort = sort;
+        if (page > 1) params.page = page;
+
+        const { data } = await fetchEmails(params);
+
+        const fetchedEmails = data.emails || [];
+        setEmails(fetchedEmails);
+
+        if (data.pagination) {
+          setPagination(data.pagination);
+        } else {
+          setPagination({
+            page: 1,
+            limit: 20,
+            total: fetchedEmails.length,
+            totalPages: 1,
+            hasNextPage: false,
+          });
+        }
+
+        /*
+         * If the currently selected email no longer exists in returned results,
+         * clear it.
+         */
+        setSelected((prevSelected) => {
+          if (!prevSelected) return null;
+          const stillExists = fetchedEmails.some(
+            (e) => (e.id || e.gmailMessageId) === (prevSelected.id || prevSelected.gmailMessageId)
+          );
+          return stillExists ? prevSelected : null;
+        });
+      } catch (error) {
+        console.error('Failed to load emails:', error);
+        const isNotConn =
+          error.response?.status === 400 &&
+          (error.response?.data?.message?.toLowerCase().includes('gmail') ||
+            error.response?.data?.message?.toLowerCase().includes('not connected'));
+        setGmailNotConnected(Boolean(isNotConn));
+        setLoadError(true);
+      } finally {
+        setInitialLoading(false);
+        setIsFiltering(false);
+      }
+    },
+    [debouncedQuery, filter, status, dateFrom, dateTo, sort, page]
+  );
+
+  useEffect(() => {
+    loadEmails(
+      emails.length === 0 &&
+      !debouncedQuery &&
+      filter === defaultPriority &&
+      status === 'ALL' &&
+      !dateFrom &&
+      !dateTo &&
+      sort === 'newest' &&
+      page === 1
+    );
+  }, [loadEmails]);
+
+  const handleSync = async () => {
+    if (syncing) return;
+
+    try {
+      setSyncing(true);
+
+      const { data } = await syncEmails();
+
+      setToast(
+        `Sync completed — ${data.syncedCount || 0} emails synced`
+      );
+      window.dispatchEvent(new Event('prioritypulse:emails-changed'));
+
+      // Re-fetch current filtered view to ensure active filters remain applied
+      await loadEmails(false);
     } catch (error) {
-      console.error('Failed to load emails:', error);
+      console.error('Failed to sync emails:', error);
+
       const isNotConn =
         error.response?.status === 400 &&
-        (error.response?.data?.message?.toLowerCase().includes('gmail') ||
-          error.response?.data?.message?.toLowerCase().includes('not connected'));
+        (
+          error.response?.data?.message
+            ?.toLowerCase()
+            .includes('gmail') ||
+          error.response?.data?.message
+            ?.toLowerCase()
+            .includes('not connected')
+        );
+
       setGmailNotConnected(Boolean(isNotConn));
 
-      setLoadError(true);
+      setToast(
+        error.response?.data?.message ||
+        'Failed to sync emails'
+      );
     } finally {
-      setLoading(false);
+      setSyncing(false);
     }
   };
 
   useEffect(() => {
-    loadEmails();
-  }, []);
+    const socket = getSocket();
+    if (!socket) return undefined;
 
-  /* ---------------------------------------------------------
-     FILTER EMAILS
-  --------------------------------------------------------- */
+    const handleNewEmail = (incoming) => {
+      if (!incoming) return;
 
-  const list = useMemo(() => {
-    return emails.filter((email) => {
+      console.log(
+        '[Socket] Received new-email in Inbox:',
+        incoming.id || incoming.gmailMessageId,
+        incoming.priority
+      );
 
-      const haystack = `
-        ${email.sender || ''}
-        ${email.subject || ''}
-        ${email.preview || ''}
-        ${email.body || ''}
-      `.toLowerCase();
+      // 1. High priority email notification via Toast fallback
+      if (incoming.priority === 'HIGH') {
+        setToast('New high-priority email detected');
+      }
 
-      const matchesPriority =
-        filter === 'ALL' ||
-        email.priority === filter;
-
+      // 2. Check if incoming email satisfies active filters
+      const matchesPriority = filter === 'ALL' || incoming.priority === filter;
       const matchesStatus =
         status === 'ALL' ||
-        (
-          status === 'UNREAD'
-            ? email.unread
-            : !email.unread
-        );
-
-      const matchesImportant =
-        !importantOnly ||
-        email.important;
-
+        (status === 'UNREAD' ? incoming.unread : !incoming.unread);
       const matchesSearch =
-        haystack.includes(
-          query.toLowerCase()
-        );
+        !debouncedQuery ||
+        [
+          incoming.subject,
+          incoming.sender,
+          incoming.recipient,
+          incoming.preview,
+          incoming.body,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(debouncedQuery.toLowerCase());
 
-      return (
-        matchesPriority &&
-        matchesStatus &&
-        matchesImportant &&
-        matchesSearch
-      );
-    });
-  }, [
-    emails,
-    filter,
-    status,
-    query,
-    importantOnly,
-  ]);
+      let matchesDate = true;
+      if (incoming.date) {
+        const emailTime = new Date(incoming.date).getTime();
+        if (dateFrom) {
+          const fromTime = new Date(dateFrom);
+          fromTime.setUTCHours(0, 0, 0, 0);
+          if (emailTime < fromTime.getTime()) matchesDate = false;
+        }
+        if (dateTo) {
+          const toTime = new Date(dateTo);
+          toTime.setUTCHours(23, 59, 59, 999);
+          if (emailTime > toTime.getTime()) matchesDate = false;
+        }
+      }
+
+      // Only insert into visible list if it satisfies active filters
+      if (matchesPriority && matchesStatus && matchesSearch && matchesDate) {
+        setEmails((currentEmails) => {
+          const incomingId = incoming.id || incoming.gmailMessageId;
+          const exists = currentEmails.some(
+            (email) => (email.id || email.gmailMessageId) === incomingId
+          );
+
+          if (exists) {
+            return currentEmails.map((email) =>
+              (email.id || email.gmailMessageId) === incomingId
+                ? { ...email, ...incoming }
+                : email
+            );
+          }
+
+          const next = [incoming, ...currentEmails];
+          return next.sort((a, b) =>
+            sort === 'oldest'
+              ? new Date(a.date || 0) - new Date(b.date || 0)
+              : new Date(b.date || 0) - new Date(a.date || 0)
+          );
+        });
+
+        setPagination((prev) => ({
+          ...prev,
+          total: prev.total + 1,
+        }));
+      }
+
+      // 3. Update preview detail if currently selected email was updated
+      setSelected((prevSelected) => {
+        if (!prevSelected) return null;
+        const incomingId = incoming.id || incoming.gmailMessageId;
+        if (
+          (prevSelected.id || prevSelected.gmailMessageId) === incomingId
+        ) {
+          return { ...prevSelected, ...incoming };
+        }
+        return prevSelected;
+      });
+    };
+
+    const handleHighPriority = () => {
+      setToast('New high-priority email detected');
+    };
+
+    socket.on('new-email', handleNewEmail);
+    socket.on('high-priority-email', handleHighPriority);
+
+    return () => {
+      socket.off('new-email', handleNewEmail);
+      socket.off('high-priority-email', handleHighPriority);
+    };
+  }, [filter, status, debouncedQuery, dateFrom, dateTo, sort]);
 
   /* ---------------------------------------------------------
      SELECT EMAIL
   --------------------------------------------------------- */
 
   const selectEmail = (email) => {
-    setSelected(email);
+    const nextEmail = email.unread ? { ...email, unread: false } : email;
+    setSelected(nextEmail);
+
+    if (email.unread) {
+      setEmails((currentEmails) => currentEmails.map((item) => (
+        item.id === email.id || item.gmailMessageId === email.gmailMessageId
+          ? { ...item, unread: false }
+          : item
+      )));
+      markEmailRead(email.gmailMessageId || email.id)
+        .then(() => {
+          window.dispatchEvent(new Event('prioritypulse:emails-changed'));
+        })
+        .catch((error) => {
+          console.warn('Unable to persist read state:', error.message);
+        });
+    }
 
     setAiLoading(true);
 
@@ -515,16 +804,28 @@ export function Inbox({
   --------------------------------------------------------- */
 
   const clearFilters = () => {
-    setFilter(
-      importantOnly
-        ? 'HIGH'
-        : 'ALL'
-    );
-
-    setStatus('ALL');
-
     setQuery('');
+    setDebouncedQuery('');
+    setFilter(defaultPriority);
+    setStatus('ALL');
+    setDateFrom('');
+    setDateTo('');
+    setSort('newest');
+    setPage(1);
   };
+
+  const hasActiveFilters = Boolean(
+    query ||
+    debouncedQuery ||
+    filter !== defaultPriority ||
+    status !== 'ALL' ||
+    dateFrom ||
+    dateTo ||
+    sort !== 'newest' ||
+    page > 1
+  );
+
+  const list = emails;
 
   /* ---------------------------------------------------------
      PREVIEW EMAIL
@@ -593,20 +894,20 @@ export function Inbox({
 
           <button
             className="pp-filter-button"
-            onClick={loadEmails}
-            disabled={loading}
+            onClick={handleSync}
+            disabled={syncing || initialLoading}
           >
 
             <RefreshCw
               size={14}
               className={
-                loading
+                syncing
                   ? 'pp-spin'
                   : ''
               }
             />
 
-            {loading
+            {syncing
               ? 'Syncing...'
               : 'Sync inbox'}
 
@@ -638,9 +939,10 @@ export function Inbox({
                   : ''
               }
               key={item}
-              onClick={() =>
-                setFilter(item)
-              }
+              onClick={() => {
+                setFilter(item);
+                setPage(1);
+              }}
             >
 
               {item === 'ALL'
@@ -676,9 +978,10 @@ export function Inbox({
                   : ''
               }
               key={item}
-              onClick={() =>
-                setStatus(item)
-              }
+              onClick={() => {
+                setStatus(item);
+                setPage(1);
+              }}
             >
 
               {item === 'ALL'
@@ -694,16 +997,55 @@ export function Inbox({
 
         </div>
 
+        {/* Date range */}
+        <div className="pp-date-group">
+          <span className="pp-date-label">From</span>
+          <input
+            type="date"
+            aria-label="From date"
+            className="pp-date-input"
+            value={dateFrom}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setPage(1);
+            }}
+          />
+          <span className="pp-date-label">To</span>
+          <input
+            type="date"
+            aria-label="To date"
+            className="pp-date-input"
+            value={dateTo}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        {/* Sort */}
+        <select
+          aria-label="Sort order"
+          className="pp-sort-select"
+          value={sort}
+          onChange={(e) => {
+            setSort(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+
+        {/* Loading Indicator */}
+        {isFiltering && (
+          <span className="pp-filter-spinner">
+            <RefreshCw size={11} className="pp-spin" /> Updating...
+          </span>
+        )}
+
         {/* Clear */}
-        {(
-          query ||
-          filter !== (
-            importantOnly
-              ? 'HIGH'
-              : 'ALL'
-          ) ||
-          status !== 'ALL'
-        ) && (
+        {hasActiveFilters && (
 
           <button
             className="pp-clear-filters"
@@ -717,7 +1059,7 @@ export function Inbox({
       </div>
 
       {/* Workspace */}
-      {loading ? (
+      {initialLoading ? (
 
         <div className="pp-workspace">
           <LoadingSkeleton />
@@ -784,8 +1126,7 @@ export function Inbox({
 
               <EmptyState
                 title={
-                  query ||
-                  status !== 'ALL'
+                  hasActiveFilters
                     ? 'No emails found'
                     : importantOnly
                       ? 'No high-priority emails'
@@ -793,17 +1134,15 @@ export function Inbox({
                 }
 
                 message={
-                  query ||
-                  status !== 'ALL'
-                    ? 'Try changing your search or filters.'
+                  hasActiveFilters
+                    ? 'No emails match your filters.'
                     : importantOnly
                       ? "You're all caught up."
                       : 'Your inbox is empty. New emails will appear here automatically.'
                 }
 
                 action={
-                  query ||
-                  status !== 'ALL'
+                  hasActiveFilters
                     ? {
                         label:
                           'Clear filters',
@@ -814,6 +1153,31 @@ export function Inbox({
                 }
               />
 
+            )}
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="pp-pagination">
+                <button
+                  type="button"
+                  className="pp-pagination-btn"
+                  disabled={page <= 1 || isFiltering}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </button>
+                <span className="pp-pagination-info">
+                  Page {page} of {pagination.totalPages} ({pagination.total} emails)
+                </span>
+                <button
+                  type="button"
+                  className="pp-pagination-btn"
+                  disabled={!pagination.hasNextPage || isFiltering}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </button>
+              </div>
             )}
 
           </section>
@@ -1101,6 +1465,48 @@ export function Notifications() {
       tone: 'blue',
     },
   ]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return undefined;
+
+    const handleHighPriority = (payload) => {
+      setItems((prev) => [
+        {
+          icon: CircleAlert,
+          title: 'High-priority email detected',
+          copy: `${payload.sender || 'Sender'}: ${payload.subject || 'New message'}`,
+          time: 'Just now',
+          tone: 'coral',
+        },
+        ...prev,
+      ]);
+      setToast('New high-priority email detected');
+    };
+
+    const handleNewEmail = (email) => {
+      if (email.priority !== 'HIGH') {
+        setItems((prev) => [
+          {
+            icon: Sparkles,
+            title: `Email classified (${email.priority})`,
+            copy: `${email.subject || 'New message'} → ${email.priority}`,
+            time: 'Just now',
+            tone: email.priority === 'MEDIUM' ? 'lime' : 'blue',
+          },
+          ...prev,
+        ]);
+      }
+    };
+
+    socket.on('high-priority-email', handleHighPriority);
+    socket.on('new-email', handleNewEmail);
+
+    return () => {
+      socket.off('high-priority-email', handleHighPriority);
+      socket.off('new-email', handleNewEmail);
+    };
+  }, []);
 
   const clear = () => {
     setItems([]);

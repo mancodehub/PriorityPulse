@@ -14,6 +14,17 @@ const { sendOtpEmail } = require("../config/email");
 const otpStore = new Map();
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
+
+// Periodic cleanup of expired OTPs from memory
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of otpStore.entries()) {
+    if (now > val.expiresAt) {
+      otpStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000).unref();
 
 // ==========================================
 // GENERATE 6 DIGIT OTP
@@ -40,18 +51,37 @@ const sendOtp = asyncHandler(async (req, res) => {
     throw new HttpError("Please enter a valid email address", 400);
   }
 
-  const otp = generateOtp();
+  const now = Date.now();
+  const existingOtpData = otpStore.get(normalizedEmail);
 
+  // 60-second resend cooldown to prevent duplicate or spam submissions
+  if (
+    existingOtpData &&
+    existingOtpData.lastRequestedAt &&
+    now - existingOtpData.lastRequestedAt < RESEND_COOLDOWN_MS
+  ) {
+    const remainingSeconds = Math.ceil(
+      (RESEND_COOLDOWN_MS - (now - existingOtpData.lastRequestedAt)) / 1000
+    );
+    return res.status(429).json({
+      success: false,
+      message: "Please wait before requesting another OTP.",
+      retryAfter: remainingSeconds,
+    });
+  }
+
+  const otp = generateOtp();
   const hashedOtp = await bcrypt.hash(otp, 10);
+
+  // Send the email via Gmail SMTP first
+  // Only save the OTP and initiate the cooldown after Gmail accepts the message
+  await sendOtpEmail(normalizedEmail, otp);
 
   otpStore.set(normalizedEmail, {
     hashedOtp,
-    expiresAt: Date.now() + OTP_EXPIRY_MS,
+    expiresAt: now + OTP_EXPIRY_MS,
+    lastRequestedAt: now,
   });
-
-  await sendOtpEmail(normalizedEmail, otp);
-
-  console.log(`OTP email sent to ${normalizedEmail}`);
 
   return res.status(200).json({
     success: true,

@@ -6,13 +6,17 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "train:ml": "python ../ml/train_model.py"
+    "mongo:start": "powershell -Command \"Start-Process cmd -ArgumentList '/c net start MongoDB' -Verb RunAs\"",
+    "ml:train": "python ../ml-service/model/classifier.py",
+    "test:ml": "node scripts/testMlService.js",
+    "test:smtp": "node scripts/verifySmtp.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "axios": "^1.7.9",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -24,7 +28,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.24.2",
     "morgan": "^1.11.0",
-    "nodemailer": "^10.0.1"
+    "nodemailer": "^10.0.1",
+    "redis": "^6.2.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

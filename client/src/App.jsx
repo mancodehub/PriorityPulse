@@ -19,6 +19,7 @@ import Login from './pages/Login.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Dashboard, { Analytics, Inbox, Notifications } from './pages/Dashboard.jsx';
 import Settings from './pages/Settings.jsx';
+import CustomKeywordInbox from './pages/CustomKeywordInbox.jsx';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -183,6 +184,5 @@ function CtaPanel() { return <section className="section-wrap"><div className="c
 export default function App() {
   const protect = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
-  return <><ScrollToTop /><Routes><Route path="/login" element={<Login />} /><Route path="/dashboard" element={protect(<Inbox />)} /><Route path="/dashboard/overview" element={protect(<Dashboard />)} /><Route path="/dashboard/inbox" element={protect(<Inbox />)} /><Route path="/dashboard/important" element={protect(<Inbox importantOnly />)} /><Route path="/dashboard/medium" element={protect(<Inbox initialFilter="MEDIUM" />)} /><Route path="/dashboard/low" element={protect(<Inbox initialFilter="LOW" />)} /><Route path="/dashboard/analytics" element={protect(<Analytics />)} /><Route path="/dashboard/notifications" element={protect(<Notifications />)} /><Route path="/dashboard/settings" element={protect(<Settings />)} /><Route element={<Layout />}><Route path="/" element={<Home />} /><Route path="/about" element={<About />} /><Route path="/contact" element={<Contact />} /><Route path="*" element={<Home />} /></Route></Routes></>;
+  return <><ScrollToTop /><Routes><Route path="/login" element={<Login />} /><Route path="/dashboard" element={protect(<Inbox />)} /><Route path="/dashboard/overview" element={protect(<Dashboard />)} /><Route path="/dashboard/inbox" element={protect(<Inbox />)} /><Route path="/dashboard/custom-keywords" element={protect(<CustomKeywordInbox />)} /><Route path="/dashboard/important" element={protect(<Inbox importantOnly />)} /><Route path="/dashboard/medium" element={protect(<Inbox initialFilter="MEDIUM" />)} /><Route path="/dashboard/low" element={protect(<Inbox initialFilter="LOW" />)} /><Route path="/dashboard/analytics" element={protect(<Analytics />)} /><Route path="/dashboard/notifications" element={protect(<Notifications />)} /><Route path="/dashboard/settings" element={protect(<Settings />)} /><Route element={<Layout />}><Route path="/" element={<Home />} /><Route path="/about" element={<About />} /><Route path="/contact" element={<Contact />} /><Route path="*" element={<Home />} /></Route></Routes></>;
 }
-

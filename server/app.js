@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/authRoutes");
 const emailRoutes = require("./routes/emailRoutes");
 const gmailRoutes = require("./routes/gmailRoutes");
+const keywordRoutes = require("./routes/keywordRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 const notFound = require("./middleware/notFound");
@@ -52,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/emails", emailRoutes);
 
 app.use("/api/gmail", gmailRoutes);
+app.use("/api/keywords", keywordRoutes);
 
 // ==========================================
 // ERROR HANDLING
